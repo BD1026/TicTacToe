@@ -50,21 +50,24 @@ io.on('connection', (socket) => {
     // 當玩家進行移動時觸發
     socket.on('move', (data) => {
         // 驗證是否是該玩家的回合
-        if (socket.id === players[0] && currentPlayer === 'X' || socket.id === players[1] && currentPlayer === 'O') {
+        if ((socket.id === players[0] && currentPlayer === 'X') || (socket.id === players[1] && currentPlayer === 'O')) {
             // 確認該位置尚未被佔用
             if (board[data.index] === null) {
                 board[data.index] = currentPlayer; // 更新遊戲板
                 const winner = checkWinner(board); // 檢查是否有玩家獲勝
+                io.emit('update', { board, currentPlayer }); // 廣播更新的棋盤狀態和當前玩家
+
                 if (winner) {
                     io.emit('gameOver', { winner }); // 廣播遊戲結束訊息
-                    board = Array(9).fill(null); // 重置遊戲板
-                    currentPlayer = 'X'; // 重置初始玩家
+                    // 重置遊戲狀態
+                    board = Array(9).fill(null);
+                    currentPlayer = 'X';
                 } else if (board.every(cell => cell !== null)) {
                     io.emit('gameOver', { winner: 'Draw' }); // 廣播平局訊息
-                    board = Array(9).fill(null); // 重置遊戲板
-                    currentPlayer = 'X'; // 重置初始玩家
+                    // 重置遊戲狀態
+                    board = Array(9).fill(null);
+                    currentPlayer = 'X';
                 } else {
-                    io.emit('update', { board, currentPlayer }); // 廣播更新遊戲板和當前玩家
                     currentPlayer = currentPlayer === 'X' ? 'O' : 'X'; // 切換玩家
                 }
             }
