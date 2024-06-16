@@ -74,6 +74,22 @@ io.on('connection', (socket) => {
         }
     });
 
+    // 當玩家發送聊天訊息時觸發
+    socket.on('chatMessage', (data) => {
+        io.emit('chatMessage', data); // 廣播聊天訊息
+    });
+
+    // 當玩家請求重置遊戲時觸發
+    socket.on('requestReset', () => {
+        // 重置遊戲狀態
+        board = Array(9).fill(null);
+        currentPlayer = 'X';
+        // 為每個玩家重新分配符號
+        players.forEach((player, index) => {
+            io.to(player).emit('reset', { symbol: index === 0 ? 'X' : 'O' });
+        });
+    });
+
     // 當玩家斷線時觸發
     socket.on('disconnect', () => {
         // 移除斷線玩家
@@ -81,7 +97,7 @@ io.on('connection', (socket) => {
         // 重置遊戲狀態
         board = Array(9).fill(null);
         currentPlayer = 'X';
-        io.emit('reset'); // 廣播重置訊息
+        io.emit('reset', { symbol: null }); // 廣播重置訊息
     });
 });
 

@@ -1,43 +1,50 @@
 const socket = io(); // 初始化 Socket.io 客戶端
 
 let symbol; // 存儲玩家的符號 ('X' 或 'O')
+let countdownTimer; // 用於存儲倒計時器
+let countdown = 3; // 設置倒計時秒數
 
 // 當接收到初始化訊息時觸發
 socket.on('init', (data) => {
     symbol = data.symbol; // 設置玩家符號
-    document.querySelector('h2').innerText = `You are ${symbol}`; // 顯示玩家符號
+    document.querySelector('h2').innerText = `你是 ${symbol}`; // 顯示玩家符號
 });
 
 // 當接收到房間已滿訊息時觸發
 socket.on('full', () => {
-    alert('The game room is full. Please try again later.'); // 顯示房間已滿提示
+    alert('你太晚了，房間已滿，請稍後再嘗試。'); // 顯示房間已滿提示
 });
 
 // 當接收到遊戲更新訊息時觸發
 socket.on('update', (data) => {
     updateBoard(data.board); // 更新遊戲板
-    document.querySelector('h2').innerText = `Current player: ${data.currentPlayer}`; // 更新當前玩家顯示
+    document.querySelector('h2').innerText = `當前玩家: ${data.currentPlayer}`; // 更新當前玩家顯示
 });
 
 // 當接收到重置訊息時觸發
-socket.on('reset', () => {
+socket.on('reset', (data) => {
     resetBoard(); // 重置遊戲板
-    document.querySelector('h2').innerText = 'Waiting for players...'; // 顯示等待玩家訊息
+    symbol = data.symbol; // 更新玩家符號
+    document.querySelector('h2').innerText = `你是 ${symbol}`; // 顯示玩家符號
+    clearInterval(countdownTimer); // 清除倒計時器
+    document.querySelector('#countdown').innerText = ''; // 清空倒計時顯示
 });
 
 // 當接收到遊戲結束訊息時觸發
 socket.on('gameOver', (data) => {
     if (data.winner === 'Draw') {
-        document.querySelector('h2').innerText = 'It\'s a draw!'; // 顯示平局訊息
+        document.querySelector('h2').innerText = '平手!!!'; // 顯示平局訊息
     } else if (data.winner === symbol) {
-        document.querySelector('h2').innerText = 'You win!'; // 顯示玩家獲勝訊息
+        document.querySelector('h2').innerText = 'You Win!'; // 顯示玩家獲勝訊息
     } else {
-        document.querySelector('h2').innerText = 'You lose!'; // 顯示玩家失敗訊息
+        document.querySelector('h2').innerText = 'You Lose!'; // 顯示玩家失敗訊息
     }
-    setTimeout(() => {
-        resetBoard(); // 遊戲結束後重置遊戲板
-        document.querySelector('h2').innerText = 'Waiting for players...'; // 顯示等待玩家訊息
-    }, 3000); // 延遲 3 秒後重置遊戲
+    startCountdown(); // 開始倒計時
+});
+
+// 當接收到聊天訊息時觸發
+socket.on('chatMessage', (data) => {
+    displayMessage(data); // 顯示聊天訊息
 });
 
 const boardElement = document.getElementById('board'); // 獲取遊戲板元素
@@ -73,3 +80,47 @@ function createBoard() {
 }
 
 createBoard(); // 呼叫函數創建遊戲板
+
+// 開始倒計時
+function startCountdown() {
+    countdown = 3; // 初始化倒計時秒數
+    document.querySelector('#countdown').innerText = `${countdown}秒後重新開始...`;
+    countdownTimer = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+            document.querySelector('#countdown').innerText = `${countdown}秒後重新開始...`;
+        } else {
+            clearInterval(countdownTimer); // 清除倒計時器
+            socket.emit('requestReset'); // 向伺服器請求重置遊戲
+        }
+    }, 1000);
+}
+
+// 發送聊天訊息
+function sendMessage() {
+    const messageInput = document.getElementById('message-input');
+    const message = messageInput.value;
+    if (message.trim()) {
+        socket.emit('chatMessage', { message, symbol }); // 發送聊天訊息
+        messageInput.value = ''; // 清空輸入框
+    }
+}
+
+// 顯示聊天訊息
+function displayMessage(data) {
+    const chatBox = document.getElementById('chat-box');
+    const messageElement = document.createElement('div');
+    messageElement.innerText = `${data.symbol}: ${data.message}`;
+    chatBox.appendChild(messageElement);
+    chatBox.scrollTop = chatBox.scrollHeight; // 滾動到最新訊息
+}
+
+// 監聽發送按鈕
+document.getElementById('send-button').addEventListener('click', sendMessage);
+
+// 監聽輸入框按鍵事件，當按下 Enter 鍵時發送訊息
+document.getElementById('message-input').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+});

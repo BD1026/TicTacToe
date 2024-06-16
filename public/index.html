@@ -36,11 +36,44 @@
             color: white;
         }
         
+        #chat {
+            margin-top: 20px;
+            width: 300px;
+        }
+        #chat-box {
+            height: 150px;
+            background-color: rgb(214, 238, 233);
+            overflow-y: auto;
+            border: 1px solid #333;
+            padding: 10px;
+        }
+        #chat-input {
+            display: flex;
+            margin-top: 10px;
+        }
+        #message-input {
+            flex: 1;
+            padding: 10px;
+            font-size: 1em;
+            background-color: rgb(214, 238, 233);
+        }
+        #send-button {
+            padding: 10px;
+            font-size: 1em;
+        }
     </style>
 </head>
 <body>
     <h2>Waiting for players...</h2>
     <div id="board"></div>
+    <div id="countdown"></div> <!-- 添加倒计时显示元素 -->
+    <div id="chat">
+        <div id="chat-box"></div> <!-- 聊天訊息顯示區域 -->
+        <div id="chat-input">
+            <input type="text" id="message-input" placeholder="輸入訊息...">
+            <button id="send-button">發送</button>
+        </div>
+    </div>
     <script src="/socket.io/socket.io.js"></script> <!-- 引入 Socket.io 客戶端腳本 -->
     <script src="client.js"></script> <!-- 引入客戶端腳本 -->
 </body>
